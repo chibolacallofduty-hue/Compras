@@ -214,6 +214,21 @@
   .chip:active{ background:#DDE1F6; }
   .chip svg{ width:13px; height:13px; }
 
+  /* name autocomplete suggestions */
+  .suggestions{
+    position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:20;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm);
+    box-shadow:0 8px 20px rgba(18,21,28,0.12); max-height:220px; overflow-y:auto;
+  }
+  .suggestion-item{
+    display:flex; flex-direction:column; gap:2px; padding:10px 13px; cursor:pointer;
+    border-bottom:1px solid var(--line);
+  }
+  .suggestion-item:last-child{ border-bottom:none; }
+  .suggestion-item:hover, .suggestion-item:active{ background:var(--primary-tint); }
+  .suggestion-name{ font-size:14px; font-weight:600; color:var(--ink); }
+  .suggestion-barcode{ font-size:11px; color:var(--muted-light); font-family:'IBM Plex Mono',monospace; }
+
   /* scanner modal */
   .scanner-overlay{
     position:fixed; inset:0; background:rgba(15,17,23,0.88);
@@ -291,9 +306,12 @@
 
     <div id="quickAddWrap" style="margin-bottom:16px;"></div>
 
-    <div class="field-row" style="margin-bottom:8px;">
-      <input type="text" id="newItemName" placeholder="Nombre del producto" maxlength="60">
-      <input type="number" id="newItemQty" placeholder="Cant." min="1" value="1">
+    <div class="field-row" style="margin-bottom:8px; position:relative;">
+      <div style="flex:2; position:relative;">
+        <input type="text" id="newItemName" placeholder="Nombre del producto" maxlength="60" autocomplete="off">
+        <div id="nameSuggestions" class="suggestions" hidden></div>
+      </div>
+      <input type="number" id="newItemQty" placeholder="Cant." min="1" value="1" style="flex:1;">
     </div>
     <div class="field-row" style="margin-bottom:12px;">
       <input type="text" id="newItemBarcode" placeholder="Código de barra (opcional)" maxlength="30">
@@ -730,15 +748,16 @@ async function renderDatabase(){
   `).join('');
 }
 
+let productsCache = [];
+
 async function loadQuickAddChips(){
   const wrap = document.getElementById('quickAddWrap');
   if(!db || !wrap) return;
   try{
     const snap = await db.ref('products').once('value');
-    if(!snap.exists()){ wrap.innerHTML = ''; return; }
-    const all = Object.values(snap.val());
-    all.sort((a,b)=> (b.updatedAt||0) - (a.updatedAt||0));
-    const top = all.slice(0, 14);
+    if(!snap.exists()){ wrap.innerHTML = ''; productsCache = []; return; }
+    productsCache = Object.values(snap.val());
+    const top = [...productsCache].sort((a,b)=> (b.updatedAt||0) - (a.updatedAt||0)).slice(0, 14);
     wrap.innerHTML = `
       <div class="quick-add-label">Agregar rápido, desde tu base de datos</div>
       <div class="chip-row">
@@ -753,6 +772,31 @@ async function loadQuickAddChips(){
     console.error('loadQuickAddChips error', e);
     wrap.innerHTML = '';
   }
+}
+
+function showNameSuggestions(query){
+  const box = document.getElementById('nameSuggestions');
+  const q = query.trim().toLowerCase();
+  if(q.length < 1 || productsCache.length === 0){ box.hidden = true; return; }
+  const matches = productsCache.filter(p => p.name.toLowerCase().includes(q)).slice(0, 6);
+  if(matches.length === 0){ box.hidden = true; return; }
+  box.innerHTML = matches.map(p => `
+    <div class="suggestion-item" onmousedown="pickSuggestion('${escapeHtml(p.barcode)}')">
+      <span class="suggestion-name">${escapeHtml(p.name)}</span>
+      <span class="suggestion-barcode">${escapeHtml(p.barcode)}</span>
+    </div>
+  `).join('');
+  box.hidden = false;
+}
+
+function pickSuggestion(barcode){
+  const p = productsCache.find(x => x.barcode === barcode);
+  if(!p) return;
+  document.getElementById('newItemName').value = p.name;
+  document.getElementById('newItemBarcode').value = p.barcode;
+  document.getElementById('nameSuggestions').hidden = true;
+  document.getElementById('lookupStatus').textContent = '✓ Producto de tu base de datos';
+  document.getElementById('newItemQty').focus();
 }
 
 async function quickAddProduct(barcode){
@@ -775,6 +819,7 @@ async function addManualItem(){
   currentData.items.push({ id: uid(), name, qty, barcode, checked: false });
   nameEl.value = ''; qtyEl.value = '1'; barcodeEl.value = '';
   document.getElementById('lookupStatus').textContent = '';
+  document.getElementById('nameSuggestions').hidden = true;
   renderOwner();
   saveList(currentCode, currentData);
   if(barcode){
@@ -1009,7 +1054,14 @@ window.addEventListener('error', (e)=>{
 /* enter key helpers */
 document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('newItemName').addEventListener('keydown', e=>{
-    if(e.key === 'Enter') addManualItem();
+    if(e.key === 'Enter'){ document.getElementById('nameSuggestions').hidden = true; addManualItem(); }
+    if(e.key === 'Escape'){ document.getElementById('nameSuggestions').hidden = true; }
+  });
+  document.getElementById('newItemName').addEventListener('input', e=>{
+    showNameSuggestions(e.target.value);
+  });
+  document.getElementById('newItemName').addEventListener('blur', ()=>{
+    setTimeout(()=>{ document.getElementById('nameSuggestions').hidden = true; }, 150);
   });
   document.getElementById('joinCodeInput').addEventListener('keydown', e=>{
     if(e.key === 'Enter') submitJoin();
