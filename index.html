@@ -199,6 +199,21 @@
   .field-row input:first-child{ flex:2; }
   .field-row input:last-child{ flex:1; }
 
+  /* quick-add chips */
+  .quick-add-label{ font-size:11.5px; color:var(--muted); font-weight:600; margin-bottom:8px; }
+  .chip-row{
+    display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch;
+  }
+  .chip-row::-webkit-scrollbar{ height:0; }
+  .chip{
+    flex:0 0 auto; display:flex; align-items:center; gap:6px;
+    background:var(--primary-tint); color:var(--primary-dark); border:1px solid #DCE0F5;
+    border-radius:20px; padding:8px 13px; font-size:13px; font-weight:600;
+    cursor:pointer; white-space:nowrap; transition:background 0.12s ease;
+  }
+  .chip:active{ background:#DDE1F6; }
+  .chip svg{ width:13px; height:13px; }
+
   /* scanner modal */
   .scanner-overlay{
     position:fixed; inset:0; background:rgba(15,17,23,0.88);
@@ -274,6 +289,8 @@
       <div class="progress-track"><div class="progress-fill" id="ownerProgressFill" style="width:0%"></div></div>
     </div>
 
+    <div id="quickAddWrap" style="margin-bottom:16px;"></div>
+
     <div class="field-row" style="margin-bottom:8px;">
       <input type="text" id="newItemName" placeholder="Nombre del producto" maxlength="60">
       <input type="number" id="newItemQty" placeholder="Cant." min="1" value="1">
@@ -299,7 +316,7 @@
       </div>
       <div class="code-text" id="ownerCodeText">------</div>
       <div class="code-actions">
-        <button class="btn btn-outline" onclick="copyShareText()">Copiar mensaje para compartir</button>
+        <button class="btn btn-outline" onclick="copyShareText()">Copiar link para compartir</button>
       </div>
     </div>
 
@@ -504,6 +521,7 @@ async function createList(){
   renderOwner();
   showScreen('screen-list');
   startPolling();
+  loadQuickAddChips();
 
   const ok = await saveList(code, data);
   rememberLastCode(code, 'owner');
@@ -712,6 +730,40 @@ async function renderDatabase(){
   `).join('');
 }
 
+async function loadQuickAddChips(){
+  const wrap = document.getElementById('quickAddWrap');
+  if(!db || !wrap) return;
+  try{
+    const snap = await db.ref('products').once('value');
+    if(!snap.exists()){ wrap.innerHTML = ''; return; }
+    const all = Object.values(snap.val());
+    all.sort((a,b)=> (b.updatedAt||0) - (a.updatedAt||0));
+    const top = all.slice(0, 14);
+    wrap.innerHTML = `
+      <div class="quick-add-label">Agregar rápido, desde tu base de datos</div>
+      <div class="chip-row">
+        ${top.map(p => `
+          <button class="chip" onclick="quickAddProduct('${escapeHtml(p.barcode)}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            ${escapeHtml(p.name)}
+          </button>
+        `).join('')}
+      </div>`;
+  }catch(e){
+    console.error('loadQuickAddChips error', e);
+    wrap.innerHTML = '';
+  }
+}
+
+async function quickAddProduct(barcode){
+  const own = await lookupOwnProduct(barcode);
+  if(!own) { toast('No se pudo cargar ese producto.', true); return; }
+  currentData.items.push({ id: uid(), name: own, qty: 1, barcode, checked: false });
+  renderOwner();
+  saveList(currentCode, currentData);
+  toast('Agregado: ' + own);
+}
+
 async function addManualItem(){
   const nameEl = document.getElementById('newItemName');
   const qtyEl = document.getElementById('newItemQty');
@@ -722,10 +774,14 @@ async function addManualItem(){
   const barcode = barcodeEl.value.trim() || null;
   currentData.items.push({ id: uid(), name, qty, barcode, checked: false });
   nameEl.value = ''; qtyEl.value = '1'; barcodeEl.value = '';
+  document.getElementById('lookupStatus').textContent = '';
   renderOwner();
   saveList(currentCode, currentData);
-  if(barcode) saveProductToDb(barcode, name); // grows your personal database automatically
-  nameEl.focus();
+  if(barcode){
+    saveProductToDb(barcode, name); // grows your personal database automatically
+    loadQuickAddChips();
+  }
+  barcodeEl.focus();
 }
 
 /* ---------- shared barcode matching (used by manual entry and camera scan) ---------- */
@@ -769,16 +825,35 @@ async function toggleItem(id){
   saveList(currentCode, currentData);
 }
 
+function shareUrlFor(code){
+  return `${window.location.origin}${window.location.pathname}?code=${code}`;
+}
+
 function copyShareText(){
-  const msg = `Te mando el código de mi lista "${currentData.name}": ${currentCode}\nEntrá a la app y elegí "Unirme con un código" para ver los productos y marcarlos.`;
+  const link = shareUrlFor(currentCode);
+  const msg = `Te mando mi lista "${currentData.name}": ${link}\n(Si el link no abre, entrá a la app y usá el código ${currentCode})`;
   navigator.clipboard?.writeText(msg).then(()=>{
-    toast('Mensaje copiado. Pegalo donde quieras enviarlo.');
+    toast('Link copiado. Pegalo donde quieras enviarlo.');
   }).catch(()=>{
     toast('No se pudo copiar. Código: ' + currentCode);
   });
 }
 
 /* ---------- join / shopper flow ---------- */
+async function joinByCode(code){
+  const clean = code.trim().toUpperCase();
+  if(clean.length !== 6) return { ok:false, reason:'El código tiene 6 caracteres.' };
+  const data = await loadList(clean);
+  if(!data) return { ok:false, reason:'No encontramos esa lista. Revisá el código o el link.' };
+  syncFailed = false;
+  currentCode = clean; currentRole = 'shopper'; currentData = data;
+  rememberLastCode(clean, 'shopper');
+  renderShopper();
+  showScreen('screen-shopper');
+  startPolling();
+  return { ok:true };
+}
+
 async function submitJoin(){
   if(!db){ toast('No se pudo conectar con la base de datos. Recargá la página.', true); return; }
   const btn = document.getElementById('joinBtn');
@@ -795,22 +870,15 @@ async function submitJoin(){
   btn.disabled = true;
   btn.textContent = 'Buscando…';
 
-  const data = await loadList(code);
+  const result = await joinByCode(code);
 
   btn.disabled = false;
   btn.textContent = 'Ver la lista';
 
-  if(!data){
-    errEl.textContent = 'No encontramos esa lista. Revisá el código con quien te la mandó.';
+  if(!result.ok){
+    errEl.textContent = result.reason;
     errEl.style.display = 'block';
-    return;
   }
-  syncFailed = false;
-  currentCode = code; currentRole = 'shopper'; currentData = data;
-  rememberLastCode(code, 'shopper');
-  renderShopper();
-  showScreen('screen-shopper');
-  startPolling();
 }
 
 function renderShopper(){
@@ -966,6 +1034,25 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('dbNameInput').addEventListener('keydown', e=>{
     if(e.key === 'Enter') addToDatabase();
   });
+
+  // If someone opens a shared link like ?code=ABC123, join that list straight away
+  const urlCode = new URLSearchParams(window.location.search).get('code');
+  if(urlCode){
+    showScreen('screen-join');
+    document.getElementById('joinCodeInput').value = urlCode.toUpperCase();
+    document.getElementById('joinBtn').disabled = true;
+    document.getElementById('joinBtn').textContent = 'Abriendo tu lista…';
+    joinByCode(urlCode).then(result=>{
+      const btn = document.getElementById('joinBtn');
+      btn.disabled = false;
+      btn.textContent = 'Ver la lista';
+      if(!result.ok){
+        const errEl = document.getElementById('joinError');
+        errEl.textContent = result.reason;
+        errEl.style.display = 'block';
+      }
+    });
+  }
 });
 </script>
 </body>
