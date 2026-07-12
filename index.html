@@ -262,6 +262,22 @@
   .scanner-box{ width:100%; max-width:360px; background:var(--surface); padding:18px; border-radius:var(--radius); }
   .scanner-box h3{ font-family:'Sora',sans-serif; font-size:15px; margin:0 0 12px; text-align:center; }
   #reader{ width:100%; border-radius:var(--radius-sm); overflow:hidden; }
+  .reader-wrap{ position:relative; }
+  .scan-feedback{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,0.88); opacity:0; pointer-events:none;
+    transition:opacity 0.12s ease; border-radius:var(--radius-sm);
+  }
+  .scan-feedback.show{ opacity:1; }
+  .scan-feedback .badge{
+    width:76px; height:76px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    animation:badgePop 0.28s cubic-bezier(.2,1.4,.4,1);
+  }
+  .scan-feedback .badge svg{ width:38px; height:38px; stroke:#fff; fill:none; stroke-width:3; }
+  .scan-feedback.success .badge{ background:var(--success); }
+  .scan-feedback.already .badge{ background:#E0A32A; }
+  .scan-feedback.notfound .badge{ background:var(--danger); }
+  @keyframes badgePop{ from{ transform:scale(0.4); opacity:0.4; } to{ transform:scale(1); opacity:1; } }
   .scanner-status{ text-align:center; font-size:12.5px; color:var(--muted); margin-top:12px; min-height:16px;}
   .scanner-close{ margin-top:14px; }
 
@@ -431,9 +447,15 @@
 <div id="scannerOverlay" class="scanner-overlay" hidden>
   <div class="scanner-box">
     <h3 id="scannerTitle">Escaneá el código de barra</h3>
-    <div id="reader"></div>
+    <div class="reader-wrap">
+      <div id="reader"></div>
+      <div id="scanFeedback" class="scan-feedback" hidden></div>
+    </div>
     <div class="scanner-status" id="scannerStatus">Apuntá la cámara al código de barra del producto.</div>
-    <button class="btn btn-outline scanner-close" onclick="switchCamera()" id="switchCameraBtn" hidden>🔄 Cambiar cámara</button>
+    <div class="row" style="gap:8px; margin-top:6px;">
+      <button class="btn btn-outline scanner-close" onclick="toggleTorch()" id="torchBtn" hidden style="flex:1; margin-top:0;">🔦 Linterna</button>
+      <button class="btn btn-outline scanner-close" onclick="switchCamera()" id="switchCameraBtn" hidden style="flex:1; margin-top:0;">🔄 Cambiar cámara</button>
+    </div>
     <button class="btn btn-outline scanner-close" onclick="closeScanner()">Cerrar cámara</button>
   </div>
 </div>
@@ -1124,6 +1146,8 @@ async function openScanner(mode){
     availableCameras = [];
   }
 
+  document.getElementById('torchBtn').hidden = true;
+  torchOn = false;
   startCameraStream();
 }
 
@@ -1136,7 +1160,15 @@ function startCameraStream(){
     { fps: 10, qrbox: { width: 250, height: 130 } },
     onScanSuccess,
     ()=>{}
-  ).catch(err=>{
+  ).then(()=>{
+    // Offer the flashlight toggle only if this camera actually supports it.
+    try{
+      const caps = html5QrCode.getRunningTrackCapabilities();
+      document.getElementById('torchBtn').hidden = !(caps && caps.torch);
+    }catch(e){
+      document.getElementById('torchBtn').hidden = true;
+    }
+  }).catch(err=>{
     document.getElementById('scannerStatus').textContent = 'No pudimos acceder a la cámara. Revisá los permisos del navegador.';
     console.error(err);
   });
@@ -1147,7 +1179,41 @@ function closeScanner(){
     html5QrCode.stop().then(()=>html5QrCode.clear()).catch(()=>{});
   }
   document.getElementById('scannerOverlay').hidden = true;
+  document.getElementById('torchBtn').textContent = '🔦 Linterna';
+  torchOn = false;
   pendingBarcode = null;
+}
+
+let torchOn = false;
+async function toggleTorch(){
+  if(!html5QrCode) return;
+  try{
+    torchOn = !torchOn;
+    await html5QrCode.applyVideoConstraints({ advanced: [{ torch: torchOn }] });
+    document.getElementById('torchBtn').textContent = torchOn ? '🔦 Apagar linterna' : '🔦 Linterna';
+  }catch(e){
+    console.error('toggleTorch error', e);
+    torchOn = !torchOn; // revert, it didn't actually change
+    toast('Este dispositivo no permite prender la linterna desde el navegador.', true);
+  }
+}
+
+function showScanFeedback(type){
+  const box = document.getElementById('scanFeedback');
+  const icons = {
+    success: '<polyline points="20 6 9 17 4 12"></polyline>',
+    already: '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>',
+    notfound: '<circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>'
+  };
+  box.className = 'scan-feedback show ' + type;
+  box.innerHTML = `<div class="badge"><svg viewBox="0 0 24 24">${icons[type] || icons.notfound}</svg></div>`;
+  box.hidden = false;
+  if(type === 'success' && navigator.vibrate) navigator.vibrate(60);
+  clearTimeout(showScanFeedback._t);
+  showScanFeedback._t = setTimeout(()=>{
+    box.classList.remove('show');
+    setTimeout(()=>{ box.hidden = true; }, 150);
+  }, 700);
 }
 
 async function switchCamera(){
@@ -1170,6 +1236,7 @@ async function onScanSuccess(decodedText){
   if(scannerMode === 'add'){
     document.getElementById('newItemBarcode').value = decodedText;
     document.getElementById('scannerStatus').textContent = 'Código detectado: ' + decodedText;
+    showScanFeedback('success');
     toast('Código cargado. Buscando el producto…');
     closeScanner();
     scheduleLookup(decodedText);
@@ -1178,6 +1245,7 @@ async function onScanSuccess(decodedText){
   } else if(scannerMode === 'db'){
     document.getElementById('dbBarcodeInput').value = decodedText;
     document.getElementById('scannerStatus').textContent = 'Código detectado: ' + decodedText;
+    showScanFeedback('success');
     toast('Código cargado. Escribí el nombre y guardá.');
     closeScanner();
     document.getElementById('dbNameInput').focus();
@@ -1186,11 +1254,14 @@ async function onScanSuccess(decodedText){
     const result = await attemptCheckByBarcode(decodedText);
     if(result.status === 'checked'){
       document.getElementById('scannerStatus').textContent = '✓ Marcado: ' + result.item.name;
+      showScanFeedback('success');
       toast('Marcado: ' + result.item.name);
     } else if(result.status === 'already'){
       document.getElementById('scannerStatus').textContent = result.item.name + ' ya estaba marcado.';
+      showScanFeedback('already');
     } else {
       document.getElementById('scannerStatus').textContent = 'Ese código no está en la lista. Marcalo a mano si corresponde.';
+      showScanFeedback('notfound');
     }
     setTimeout(()=>{ pendingBarcode = null; }, 1200);
   }
