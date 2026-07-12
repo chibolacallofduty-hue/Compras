@@ -1132,7 +1132,6 @@ async function openScanner(mode){
   const progressWrap = document.getElementById('scannerProgressWrap');
   progressWrap.hidden = (mode !== 'check');
   if(mode === 'check') updateScannerProgress();
-  document.getElementById('switchCameraBtn').hidden = true;
 
   html5QrCode = new Html5Qrcode("reader", { formatsToSupport: [
     Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
