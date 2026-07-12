@@ -1133,12 +1133,17 @@ async function openScanner(mode){
   progressWrap.hidden = (mode !== 'check');
   if(mode === 'check') updateScannerProgress();
 
-  html5QrCode = new Html5Qrcode("reader", { formatsToSupport: [
-    Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
-    Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
-    Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
-    Html5QrcodeSupportedFormats.QR_CODE
-  ]});
+  html5QrCode = new Html5Qrcode("reader", {
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
+      Html5QrcodeSupportedFormats.CODE_128
+    ],
+    // Uses the phone's built-in barcode hardware/API when available (most modern
+    // Android + Chrome) instead of decoding every frame in JavaScript — much faster.
+    experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+    verbose: false
+  });
 
   // Detect how many cameras the device has, so we can offer a switch button
   // (useful when the rear camera struggles to focus, or on desktop webcams).
@@ -1165,7 +1170,12 @@ function startCameraStream(){
     : { facingMode: "environment" };
   html5QrCode.start(
     cameraTarget,
-    { fps: 10, qrbox: { width: 250, height: 130 } },
+    {
+      fps: 12,
+      qrbox: { width: 260, height: 120 },
+      // Lower resolution = less data to process per frame = faster response.
+      videoConstraints: { width: { ideal: 640 }, height: { ideal: 480 } }
+    },
     onScanSuccess,
     ()=>{}
   ).then(()=>{
