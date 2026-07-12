@@ -93,7 +93,22 @@
     border-radius:var(--radius);
     box-shadow:var(--shadow);
     padding:26px 22px;
+    animation: cardIn 0.28s ease;
   }
+  @keyframes cardIn{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  .spinner{
+    width:14px; height:14px; border-radius:50%;
+    border:2px solid rgba(255,255,255,0.4); border-top-color:#fff;
+    animation:spin 0.7s linear infinite; flex-shrink:0;
+  }
+  .btn-outline .spinner{ border-color:rgba(50,64,155,0.25); border-top-color:var(--primary); }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .empty svg{ width:30px; height:30px; stroke:var(--muted-light); margin-bottom:10px; }
 
   h2.section-title{
     font-family:'Sora',sans-serif;
@@ -437,8 +452,14 @@ function toast(msg, isError){
 
 function showScreen(id){
   ['screen-landing','screen-create','screen-list','screen-join','screen-shopper','screen-database'].forEach(s=>{
-    document.getElementById(s).hidden = (s !== id);
+    const el = document.getElementById(s);
+    el.hidden = (s !== id);
   });
+  const active = document.getElementById(id);
+  active.style.animation = 'none';
+  void active.offsetWidth; // restart the animation
+  active.style.animation = '';
+  window.scrollTo({top:0, behavior:'instant'});
 }
 
 function genCode(){
@@ -531,7 +552,7 @@ async function createList(){
   const data = { name, createdAt: Date.now(), items: [] };
 
   btn.disabled = true;
-  btn.textContent = 'Creando…';
+  btn.innerHTML = '<span class="spinner"></span> Creando…';
 
   currentCode = code; currentRole = 'owner'; currentData = data;
 
@@ -584,7 +605,7 @@ function renderOwner(){
 
   const wrap = document.getElementById('ownerItemsWrap');
   if(items.length === 0){
-    wrap.innerHTML = '<div class="empty">Agregá tu primer producto arriba, a mano o escaneando el código de barra.</div>';
+    wrap.innerHTML = '<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M3 6h1l2 12h12l2-9H6"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg><br>Agregá tu primer producto arriba, a mano o escaneando el código de barra.</div>';
     return;
   }
   wrap.innerHTML = items.map(it => `
@@ -734,7 +755,7 @@ async function renderDatabase(){
 
   const wrap = document.getElementById('dbItemsWrap');
   if(list.length === 0){
-    wrap.innerHTML = '<div class="empty">Agregá tu primer producto arriba, a mano o escaneando el código de barra.</div>';
+    wrap.innerHTML = '<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg><br>Agregá tu primer producto arriba, a mano o escaneando el código de barra.</div>';
     return;
   }
   wrap.innerHTML = list.map(p => `
@@ -774,10 +795,11 @@ async function loadQuickAddChips(){
   }
 }
 
-function showNameSuggestions(query){
+async function showNameSuggestions(query){
   const box = document.getElementById('nameSuggestions');
   const q = query.trim().toLowerCase();
-  if(q.length < 1 || productsCache.length === 0){ box.hidden = true; return; }
+  if(q.length < 1){ box.hidden = true; return; }
+  if(productsCache.length === 0){ await loadQuickAddChips(); }
   const matches = productsCache.filter(p => p.name.toLowerCase().includes(q)).slice(0, 6);
   if(matches.length === 0){ box.hidden = true; return; }
   box.innerHTML = matches.map(p => `
@@ -913,7 +935,7 @@ async function submitJoin(){
   }
   errEl.style.display = 'none';
   btn.disabled = true;
-  btn.textContent = 'Buscando…';
+  btn.innerHTML = '<span class="spinner"></span> Buscando…';
 
   const result = await joinByCode(code);
 
@@ -938,7 +960,7 @@ function renderShopper(){
 
   const wrap = document.getElementById('shopperItemsWrap');
   if(items.length === 0){
-    wrap.innerHTML = '<div class="empty">Todavía no cargaron productos en esta lista.</div>';
+    wrap.innerHTML = '<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><br>Todavía no cargaron productos en esta lista.</div>';
     return;
   }
   wrap.innerHTML = items.map(it => `
@@ -1093,7 +1115,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     showScreen('screen-join');
     document.getElementById('joinCodeInput').value = urlCode.toUpperCase();
     document.getElementById('joinBtn').disabled = true;
-    document.getElementById('joinBtn').textContent = 'Abriendo tu lista…';
+    document.getElementById('joinBtn').innerHTML = '<span class="spinner"></span> Abriendo tu lista…';
     joinByCode(urlCode).then(result=>{
       const btn = document.getElementById('joinBtn');
       btn.disabled = false;
