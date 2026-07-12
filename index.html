@@ -452,10 +452,11 @@
       <div id="reader"></div>
     </div>
     <div class="scanner-status" id="scannerStatus">Apuntá la cámara al código de barra del producto.</div>
-    <div class="row" style="gap:8px; margin-top:6px;">
-      <button class="btn btn-outline scanner-close" onclick="toggleTorch()" id="torchBtn" style="flex:1; margin-top:0;">🔦 Linterna</button>
-      <button class="btn btn-outline scanner-close" onclick="switchCamera()" id="switchCameraBtn" hidden style="flex:1; margin-top:0;">🔄 Cambiar cámara</button>
+    <div class="progress-wrap" id="scannerProgressWrap" style="margin:10px 0 4px;">
+      <div class="progress-label"><span id="scannerProgressLabel"></span></div>
+      <div class="progress-track"><div class="progress-fill" id="scannerProgressFill" style="width:0%"></div></div>
     </div>
+    <button class="btn btn-outline scanner-close" onclick="toggleTorch()" id="torchBtn" style="margin-top:10px;">🔦 Linterna</button>
     <button class="btn btn-outline scanner-close" onclick="closeScanner()">Cerrar cámara</button>
   </div>
   <div id="scanFeedback" class="scan-feedback" hidden></div>
@@ -1128,6 +1129,9 @@ async function openScanner(mode){
     'Escaneá para marcar comprado';
   document.getElementById('scannerStatus').textContent = 'Apuntá la cámara al código de barra del producto.';
   document.getElementById('scannerOverlay').hidden = false;
+  const progressWrap = document.getElementById('scannerProgressWrap');
+  progressWrap.hidden = (mode !== 'check');
+  if(mode === 'check') updateScannerProgress();
   document.getElementById('switchCameraBtn').hidden = true;
 
   html5QrCode = new Html5Qrcode("reader", { formatsToSupport: [
@@ -1139,16 +1143,18 @@ async function openScanner(mode){
 
   // Detect how many cameras the device has, so we can offer a switch button
   // (useful when the rear camera struggles to focus, or on desktop webcams).
+  // Pick the best rear camera automatically — prefer one clearly labeled as the
+  // main back camera over "wide"/"ultra" lenses, which tend to focus worse up close.
   try{
     availableCameras = await Html5Qrcode.getCameras();
-    activeCameraIndex = availableCameras.findIndex(c => /back|rear|environment/i.test(c.label));
+    const backCameras = availableCameras.filter(c => /back|rear|environment/i.test(c.label));
+    const mainBack = backCameras.find(c => !/wide|ultra|tele/i.test(c.label)) || backCameras[0];
+    activeCameraIndex = mainBack ? availableCameras.indexOf(mainBack) : 0;
     if(activeCameraIndex < 0) activeCameraIndex = 0;
-    document.getElementById('switchCameraBtn').hidden = availableCameras.length < 2;
   }catch(e){
     availableCameras = [];
   }
 
-  document.getElementById('torchBtn').hidden = false;
   document.getElementById('torchBtn').textContent = '🔦 Linterna';
   torchOn = false;
   startCameraStream();
@@ -1195,6 +1201,13 @@ async function toggleTorch(){
   }
 }
 
+function updateScannerProgress(){
+  const items = Object.values(currentData.items || {});
+  const done = items.filter(i=>i.checked).length;
+  document.getElementById('scannerProgressLabel').textContent = `${done} de ${items.length} comprados`;
+  document.getElementById('scannerProgressFill').style.width = items.length ? `${(done/items.length)*100}%` : '0%';
+}
+
 function showScanFeedback(type){
   const box = document.getElementById('scanFeedback');
   const icons = {
@@ -1211,19 +1224,6 @@ function showScanFeedback(type){
     box.classList.remove('show');
     setTimeout(()=>{ box.hidden = true; }, 150);
   }, 850);
-}
-
-async function switchCamera(){
-  if(availableCameras.length < 2 || !html5QrCode) return;
-  activeCameraIndex = (activeCameraIndex + 1) % availableCameras.length;
-  document.getElementById('scannerStatus').textContent = 'Cambiando de cámara…';
-  try{
-    await html5QrCode.stop();
-    startCameraStream();
-  }catch(e){
-    console.error('switchCamera error', e);
-    document.getElementById('scannerStatus').textContent = 'No se pudo cambiar de cámara.';
-  }
 }
 
 async function onScanSuccess(decodedText){
@@ -1260,6 +1260,7 @@ async function onScanSuccess(decodedText){
       document.getElementById('scannerStatus').textContent = 'Ese código no está en la lista. Marcalo a mano si corresponde.';
       showScanFeedback('notfound');
     }
+    updateScannerProgress();
     setTimeout(()=>{ pendingBarcode = null; }, 1200);
   }
 }
