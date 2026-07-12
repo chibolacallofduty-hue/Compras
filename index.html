@@ -190,6 +190,15 @@
   .item-name.done{ text-decoration:line-through; color:var(--muted-light); }
   .item-meta{ font-size:11px; color:var(--muted-light); font-family:'IBM Plex Mono',monospace; margin-top:2px;}
   .item-qty{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--muted); background:var(--bg); border-radius:6px; padding:3px 8px;}
+
+  .qty-stepper{ display:flex; align-items:center; gap:2px; background:var(--bg); border-radius:8px; padding:2px; }
+  .qty-stepper button{
+    width:24px; height:24px; border:none; background:var(--surface); border-radius:6px;
+    color:var(--primary); font-size:15px; font-weight:700; cursor:pointer; line-height:1;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 1px 2px rgba(18,21,28,0.08);
+  }
+  .qty-stepper button:active{ background:var(--primary-tint); }
+  .qty-stepper span{ min-width:20px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; }
   .item-del{ background:none; border:none; color:var(--muted-light); cursor:pointer; padding:4px; font-size:15px; line-height:1;}
   .item-del:hover{ color:var(--danger); }
 
@@ -335,7 +344,7 @@
       </button>
     </div>
     <p class="hint" id="lookupStatus" style="margin:-4px 0 12px; font-size:12px; min-height:15px;"></p>
-    <button class="btn btn-primary" style="margin-bottom:20px;" onclick="addManualItem()">Agregar producto</button>
+    <button class="btn btn-primary" style="margin-bottom:20px;" onclick="addManualItem()" id="addItemBtn">Agregar producto</button>
 
     <div id="ownerItemsWrap"></div>
 
@@ -424,6 +433,7 @@
     <h3 id="scannerTitle">Escaneá el código de barra</h3>
     <div id="reader"></div>
     <div class="scanner-status" id="scannerStatus">Apuntá la cámara al código de barra del producto.</div>
+    <button class="btn btn-outline scanner-close" onclick="switchCamera()" id="switchCameraBtn" hidden>🔄 Cambiar cámara</button>
     <button class="btn btn-outline scanner-close" onclick="closeScanner()">Cerrar cámara</button>
   </div>
 </div>
@@ -476,6 +486,59 @@ function escapeHtml(s){
 }
 
 /* ---------- storage (Firebase Realtime Database — works from any browser) ---------- */
+function normalizeListData(data){
+  if(!data) return data;
+  if(!data.items) data.items = {};
+  if(Array.isArray(data.items)){
+    const obj = {};
+    data.items.forEach(it => { if(it && it.id) obj[it.id] = it; });
+    data.items = obj;
+  }
+  return data;
+}
+
+/* Individual item writes — each product only touches its own path in the
+   database, so two people editing the same list at the same time never
+   overwrite each other's changes. */
+async function writeItem(itemId, itemData){
+  if(!db || !currentCode) return false;
+  try{
+    await db.ref('lists/' + currentCode + '/items/' + itemId).set(itemData);
+    syncFailed = false;
+  }catch(e){
+    console.error('writeItem error', e);
+    syncFailed = true;
+  }
+  updateSyncIndicator();
+  return !syncFailed;
+}
+
+async function writeItemField(itemId, field, value){
+  if(!db || !currentCode) return false;
+  try{
+    await db.ref('lists/' + currentCode + '/items/' + itemId + '/' + field).set(value);
+    syncFailed = false;
+  }catch(e){
+    console.error('writeItemField error', e);
+    syncFailed = true;
+  }
+  updateSyncIndicator();
+  return !syncFailed;
+}
+
+async function removeItemRemote(itemId){
+  if(!db || !currentCode) return false;
+  try{
+    await db.ref('lists/' + currentCode + '/items/' + itemId).remove();
+    syncFailed = false;
+  }catch(e){
+    console.error('removeItemRemote error', e);
+    syncFailed = true;
+  }
+  updateSyncIndicator();
+  return !syncFailed;
+}
+
 async function saveList(code, data){
   try{
     await db.ref('lists/' + code).set(data);
@@ -491,7 +554,7 @@ async function saveList(code, data){
 async function loadList(code){
   try{
     const snap = await db.ref('lists/' + code).once('value');
-    return snap.exists() ? snap.val() : null;
+    return snap.exists() ? normalizeListData(snap.val()) : null;
   }catch(e){
     console.error('loadList error', e);
     return null;
@@ -549,7 +612,7 @@ async function createList(){
   const nameInput = document.getElementById('listNameInput');
   const name = nameInput.value.trim() || 'Lista de compras';
   const code = genCode();
-  const data = { name, createdAt: Date.now(), items: [] };
+  const data = { name, createdAt: Date.now(), items: {} };
 
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Creando…';
@@ -598,7 +661,7 @@ function renderOwner(){
   drawBarcode(currentCode);
   updateSyncIndicator();
 
-  const items = currentData.items;
+  const items = Object.values(currentData.items || {});
   const done = items.filter(i=>i.checked).length;
   document.getElementById('ownerProgressLabel').textContent = `${done} de ${items.length} comprados`;
   document.getElementById('ownerProgressFill').style.width = items.length ? `${(done/items.length)*100}%` : '0%';
@@ -617,7 +680,11 @@ function renderOwner(){
         <div class="item-name ${it.checked?'done':''}">${escapeHtml(it.name)}</div>
         ${it.barcode ? `<div class="item-meta">${it.barcode}</div>` : ''}
       </div>
-      <div class="item-qty">×${it.qty}</div>
+      <div class="qty-stepper">
+        <button onclick="changeQty('${it.id}', -1)" aria-label="Restar">−</button>
+        <span>${it.qty}</span>
+        <button onclick="changeQty('${it.id}', 1)" aria-label="Sumar">+</button>
+      </div>
       <button class="item-del" onclick="deleteItem('${it.id}')" aria-label="Borrar">✕</button>
     </div>
   `).join('');
@@ -824,13 +891,17 @@ function pickSuggestion(barcode){
 async function quickAddProduct(barcode){
   const own = await lookupOwnProduct(barcode);
   if(!own) { toast('No se pudo cargar ese producto.', true); return; }
-  currentData.items.push({ id: uid(), name: own, qty: 1, barcode, checked: false });
+  const newItem = { id: uid(), name: own, qty: 1, barcode, checked: false };
+  if(!currentData.items) currentData.items = {};
+  currentData.items[newItem.id] = newItem;
   renderOwner();
-  saveList(currentCode, currentData);
-  toast('Agregado: ' + own);
+  const ok = await writeItem(newItem.id, newItem);
+  if(!ok) toast('No se guardó "' + own + '" — revisá tu conexión.', true);
+  else toast('Agregado: ' + own);
 }
 
 async function addManualItem(){
+  const addBtn = document.getElementById('addItemBtn');
   const nameEl = document.getElementById('newItemName');
   const qtyEl = document.getElementById('newItemQty');
   const barcodeEl = document.getElementById('newItemBarcode');
@@ -838,13 +909,22 @@ async function addManualItem(){
   if(!name){ toast('Escribí el nombre del producto.'); return; }
   const qty = Math.max(1, parseInt(qtyEl.value) || 1);
   const barcode = barcodeEl.value.trim() || null;
-  currentData.items.push({ id: uid(), name, qty, barcode, checked: false });
+  const newItem = { id: uid(), name, qty, barcode, checked: false };
+
+  addBtn.disabled = true;
+  if(!currentData.items) currentData.items = {};
+  currentData.items[newItem.id] = newItem;
   nameEl.value = ''; qtyEl.value = '1'; barcodeEl.value = '';
   document.getElementById('lookupStatus').textContent = '';
   document.getElementById('nameSuggestions').hidden = true;
   renderOwner();
-  saveList(currentCode, currentData);
-  if(barcode){
+
+  const ok = await writeItem(newItem.id, newItem);
+  addBtn.disabled = false;
+
+  if(!ok){
+    toast('No se guardó "' + name + '" — revisá tu conexión y volvé a intentar.', true);
+  } else if(barcode){
     saveProductToDb(barcode, name); // grows your personal database automatically
     loadQuickAddChips();
   }
@@ -852,25 +932,26 @@ async function addManualItem(){
 }
 
 /* ---------- shared barcode matching (used by manual entry and camera scan) ---------- */
-function attemptCheckByBarcode(code){
+async function attemptCheckByBarcode(code){
   const clean = code.trim();
   if(!clean) return { status: 'empty' };
-  const pending = currentData.items.find(i => i.barcode === clean && !i.checked);
+  const items = Object.values(currentData.items || {});
+  const pending = items.find(i => i.barcode === clean && !i.checked);
   if(pending){
     pending.checked = true;
     renderShopper();
-    saveList(currentCode, currentData);
+    await writeItemField(pending.id, 'checked', true);
     return { status: 'checked', item: pending };
   }
-  const already = currentData.items.find(i => i.barcode === clean && i.checked);
+  const already = items.find(i => i.barcode === clean && i.checked);
   if(already) return { status: 'already', item: already };
   return { status: 'notfound' };
 }
 
-function markByBarcode(){
+async function markByBarcode(){
   const el = document.getElementById('manualCheckBarcode');
   const code = el.value;
-  const result = attemptCheckByBarcode(code);
+  const result = await attemptCheckByBarcode(code);
   if(result.status === 'empty'){ toast('Escribí un código de barra.'); return; }
   if(result.status === 'checked'){ toast('Marcado: ' + result.item.name); el.value=''; }
   else if(result.status === 'already'){ toast(result.item.name + ' ya estaba marcado.'); }
@@ -878,18 +959,29 @@ function markByBarcode(){
   el.focus();
 }
 
-async function deleteItem(id){
-  currentData.items = currentData.items.filter(i=>i.id !== id);
+async function changeQty(id, delta){
+  const it = currentData.items && currentData.items[id];
+  if(!it) return;
+  it.qty = Math.max(1, (it.qty||1) + delta);
   renderOwner();
-  saveList(currentCode, currentData);
+  const ok = await writeItemField(id, 'qty', it.qty);
+  if(!ok) toast('No se pudo guardar la cantidad. Revisá tu conexión.', true);
+}
+
+async function deleteItem(id){
+  if(currentData.items) delete currentData.items[id];
+  renderOwner();
+  const ok = await removeItemRemote(id);
+  if(!ok) toast('No se pudo borrar el producto. Revisá tu conexión.', true);
 }
 
 async function toggleItem(id){
-  const it = currentData.items.find(i=>i.id===id);
+  const it = currentData.items && currentData.items[id];
   if(!it) return;
   it.checked = !it.checked;
   if(currentRole === 'owner') renderOwner(); else renderShopper();
-  saveList(currentCode, currentData);
+  const ok = await writeItemField(id, 'checked', it.checked);
+  if(!ok) toast('No se pudo guardar el cambio. Revisá tu conexión.', true);
 }
 
 function shareUrlFor(code){
@@ -953,7 +1045,7 @@ function renderShopper(){
   document.getElementById('shopperCodePill').textContent = currentCode;
   updateSyncIndicator();
 
-  const items = currentData.items;
+  const items = Object.values(currentData.items || {});
   const done = items.filter(i=>i.checked).length;
   document.getElementById('shopperProgressLabel').textContent = `${done} de ${items.length} comprados`;
   document.getElementById('shopperProgressFill').style.width = items.length ? `${(done/items.length)*100}%` : '0%';
@@ -984,7 +1076,7 @@ function startPolling(){
   db.ref('lists/' + currentCode).on('value', (snap)=>{
     if(!snap.exists()) return;
     syncFailed = false;
-    currentData = snap.val();
+    currentData = normalizeListData(snap.val());
     if(currentRole === 'owner') renderOwner(); else renderShopper();
   }, (err)=>{
     console.error('realtime listener error', err);
@@ -997,7 +1089,10 @@ function stopPolling(){
 }
 
 /* ---------- barcode scanner ---------- */
-function openScanner(mode){
+let availableCameras = [];
+let activeCameraIndex = 0;
+
+async function openScanner(mode){
   if(typeof Html5Qrcode === 'undefined'){
     toast('No se pudo cargar la cámara de escaneo. Podés agregar el producto a mano.', true);
     return;
@@ -1009,6 +1104,7 @@ function openScanner(mode){
     'Escaneá para marcar comprado';
   document.getElementById('scannerStatus').textContent = 'Apuntá la cámara al código de barra del producto.';
   document.getElementById('scannerOverlay').hidden = false;
+  document.getElementById('switchCameraBtn').hidden = true;
 
   html5QrCode = new Html5Qrcode("reader", { formatsToSupport: [
     Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
@@ -1016,8 +1112,27 @@ function openScanner(mode){
     Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
     Html5QrcodeSupportedFormats.QR_CODE
   ]});
+
+  // Detect how many cameras the device has, so we can offer a switch button
+  // (useful when the rear camera struggles to focus, or on desktop webcams).
+  try{
+    availableCameras = await Html5Qrcode.getCameras();
+    activeCameraIndex = availableCameras.findIndex(c => /back|rear|environment/i.test(c.label));
+    if(activeCameraIndex < 0) activeCameraIndex = 0;
+    document.getElementById('switchCameraBtn').hidden = availableCameras.length < 2;
+  }catch(e){
+    availableCameras = [];
+  }
+
+  startCameraStream();
+}
+
+function startCameraStream(){
+  const cameraTarget = availableCameras[activeCameraIndex]
+    ? availableCameras[activeCameraIndex].id
+    : { facingMode: "environment" };
   html5QrCode.start(
-    { facingMode: "environment" },
+    cameraTarget,
     { fps: 10, qrbox: { width: 250, height: 130 } },
     onScanSuccess,
     ()=>{}
@@ -1033,6 +1148,19 @@ function closeScanner(){
   }
   document.getElementById('scannerOverlay').hidden = true;
   pendingBarcode = null;
+}
+
+async function switchCamera(){
+  if(availableCameras.length < 2 || !html5QrCode) return;
+  activeCameraIndex = (activeCameraIndex + 1) % availableCameras.length;
+  document.getElementById('scannerStatus').textContent = 'Cambiando de cámara…';
+  try{
+    await html5QrCode.stop();
+    startCameraStream();
+  }catch(e){
+    console.error('switchCamera error', e);
+    document.getElementById('scannerStatus').textContent = 'No se pudo cambiar de cámara.';
+  }
 }
 
 async function onScanSuccess(decodedText){
@@ -1055,7 +1183,7 @@ async function onScanSuccess(decodedText){
     document.getElementById('dbNameInput').focus();
 
   } else if(scannerMode === 'check'){
-    const result = attemptCheckByBarcode(decodedText);
+    const result = await attemptCheckByBarcode(decodedText);
     if(result.status === 'checked'){
       document.getElementById('scannerStatus').textContent = '✓ Marcado: ' + result.item.name;
       toast('Marcado: ' + result.item.name);
