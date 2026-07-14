@@ -100,6 +100,64 @@
     to{ opacity:1; transform:translateY(0); }
   }
 
+  /* landing hero */
+  .hero-screen{ animation: cardIn 0.28s ease; }
+  .hero-top{
+    background: linear-gradient(135deg, var(--primary) 0%, #4C3FA6 60%, #6A3FA0 100%);
+    border-radius: var(--radius);
+    padding: 36px 22px 26px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+    color:#fff;
+    margin-bottom:16px;
+    box-shadow: 0 14px 30px rgba(50,64,155,0.28);
+  }
+  .hero-mark{
+    width:54px; height:54px; border-radius:16px; background:rgba(255,255,255,0.16);
+    display:flex; align-items:center; justify-content:center; margin:0 auto 14px;
+  }
+  .hero-mark svg{ width:28px; height:28px; }
+  .hero-title{ font-family:'Sora',sans-serif; font-weight:800; font-size:25px; margin:0 0 8px; letter-spacing:-0.3px; }
+  .hero-tagline{ font-size:13px; opacity:0.88; margin:0 auto; max-width:270px; line-height:1.55; }
+  .hero-stripes{
+    position:absolute; left:0; right:0; bottom:0; height:12px;
+    background-image: repeating-linear-gradient(90deg,
+      rgba(255,255,255,0.55) 0 2px, transparent 2px 5px,
+      rgba(255,255,255,0.3) 5px 6px, transparent 6px 11px,
+      rgba(255,255,255,0.55) 11px 14px, transparent 14px 19px);
+  }
+
+  .action-tiles{ display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+  .tile{
+    display:flex; align-items:center; gap:13px; width:100%;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm);
+    padding:15px; text-align:left; cursor:pointer;
+    box-shadow:0 1px 2px rgba(18,21,28,0.04);
+    transition: transform 0.08s ease, border-color 0.15s ease;
+  }
+  .tile:active{ transform:scale(0.98); }
+  .tile-icon{
+    width:42px; height:42px; border-radius:11px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .tile-icon svg{ width:19px; height:19px; }
+  .tile-primary .tile-icon{ background:var(--primary-tint); color:var(--primary); }
+  .tile-join .tile-icon{ background:var(--success-tint); color:var(--success); }
+  .tile-db .tile-icon{ background:#FBF0DA; color:#B7791F; }
+  .tile-text{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .tile-title{ font-size:14.5px; font-weight:700; color:var(--ink); }
+  .tile-desc{ font-size:11.5px; color:var(--muted); line-height:1.4; }
+  .tile-arrow{ color:var(--muted-light); font-size:20px; flex-shrink:0; }
+
+  .how-it-works{ display:flex; flex-direction:column; gap:11px; padding:2px 4px 4px; }
+  .step{ display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--muted); }
+  .step-num{
+    width:20px; height:20px; border-radius:50%; background:var(--surface); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace;
+    font-size:11px; font-weight:600; color:var(--primary); flex-shrink:0;
+  }
+
   .spinner{
     width:14px; height:14px; border-radius:50%;
     border:2px solid rgba(255,255,255,0.4); border-top-color:#fff;
@@ -174,8 +232,9 @@
   /* items list */
   .item{
     display:flex; align-items:center; gap:12px; padding:13px 0;
-    border-bottom:1px solid var(--line);
+    border-bottom:1px solid var(--line); transition:opacity 0.15s ease;
   }
+  .item.done-row{ opacity:0.55; }
   .item:last-child{ border-bottom:none; }
   .check{
     width:23px; height:23px; min-width:23px; border-radius:7px;
@@ -309,13 +368,55 @@
   </div>
 
   <!-- LANDING -->
-  <section id="screen-landing" class="card">
-    <h2 class="section-title">Hacé tu lista de compras</h2>
-    <p class="hint">Creá una lista, agregá productos a mano o escaneando el código de barra, y compartila con quien te va a hacer las compras.</p>
-    <div class="stack">
-      <button class="btn btn-primary" onclick="goCreate()">+ Crear lista nueva</button>
-      <button class="btn btn-outline" onclick="goJoinScreen()">Unirme con un código</button>
-      <button class="btn-ghost" onclick="goDatabase()" style="justify-content:center;">📦 Mi base de datos de productos</button>
+  <section id="screen-landing" class="hero-screen">
+    <div class="hero-top">
+      <div class="hero-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 6h1l2 12h12l2-9H6"/><circle cx="9" cy="21" r="1" fill="#fff"/><circle cx="18" cy="21" r="1" fill="#fff"/></svg>
+      </div>
+      <h1 class="hero-title">Listado</h1>
+      <p class="hero-tagline">Armá la lista, compartí el link, y mirá cómo se va marcando sola mientras compran por vos.</p>
+      <div class="hero-stripes" aria-hidden="true"></div>
+    </div>
+
+    <div class="action-tiles">
+      <button class="tile tile-primary" onclick="goCreate()">
+        <span class="tile-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+        </span>
+        <span class="tile-text">
+          <span class="tile-title">Crear lista nueva</span>
+          <span class="tile-desc">Agregá productos a mano o escaneando el código</span>
+        </span>
+        <span class="tile-arrow">›</span>
+      </button>
+
+      <button class="tile tile-join" onclick="goJoinScreen()">
+        <span class="tile-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+        </span>
+        <span class="tile-text">
+          <span class="tile-title">Unirme con un código</span>
+          <span class="tile-desc">Si ya tenés el código de una lista compartida</span>
+        </span>
+        <span class="tile-arrow">›</span>
+      </button>
+
+      <button class="tile tile-db" onclick="goDatabase()">
+        <span class="tile-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+        </span>
+        <span class="tile-text">
+          <span class="tile-title">Mi base de datos de productos</span>
+          <span class="tile-desc">Cargá tu catálogo para que se reconozca solo</span>
+        </span>
+        <span class="tile-arrow">›</span>
+      </button>
+    </div>
+
+    <div class="how-it-works">
+      <div class="step"><span class="step-num">1</span>Creá tu lista y agregá lo que necesitás</div>
+      <div class="step"><span class="step-num">2</span>Compartí el link con quien te compra</div>
+      <div class="step"><span class="step-num">3</span>Marca o escanea, y se tacha solo</div>
     </div>
   </section>
 
@@ -478,7 +579,8 @@ let syncFailed = false;
 /* ---------- helpers ---------- */
 function toast(msg, isError){
   const t = document.getElementById('toast');
-  t.textContent = msg;
+  const icon = isError ? '⚠️ ' : '✓ ';
+  t.textContent = icon + msg;
   t.classList.toggle('error', !!isError);
   t.classList.add('show');
   clearTimeout(t._timer);
@@ -697,7 +799,7 @@ function renderOwner(){
     return;
   }
   wrap.innerHTML = items.map(it => `
-    <div class="item">
+    <div class="item ${it.checked?'done-row':''}">
       <div class="check ${it.checked?'checked':''}" onclick="toggleItem('${it.id}')" role="button" aria-label="Marcar ${escapeHtml(it.name)}">
         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
       </div>
@@ -1081,7 +1183,7 @@ function renderShopper(){
     return;
   }
   wrap.innerHTML = items.map(it => `
-    <div class="item">
+    <div class="item ${it.checked?'done-row':''}">
       <div class="check ${it.checked?'checked':''}" onclick="toggleItem('${it.id}')" role="button" aria-label="Marcar ${escapeHtml(it.name)}">
         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
       </div>
@@ -1115,7 +1217,8 @@ function stopPolling(){
 
 /* ---------- barcode scanner ---------- */
 let availableCameras = [];
-let activeCameraIndex = 0;
+let chosenCameraId = null;
+let cameraRetried = false;
 
 async function openScanner(mode){
   if(typeof Html5Qrcode === 'undefined'){
@@ -1147,14 +1250,22 @@ async function openScanner(mode){
 
   // Detect how many cameras the device has, so we can offer a switch button
   // (useful when the rear camera struggles to focus, or on desktop webcams).
-  // Pick the best rear camera automatically — prefer one clearly labeled as the
-  // main back camera over "wide"/"ultra" lenses, which tend to focus worse up close.
+  // Pick the rear camera with certainty. Device labels are unreliable (many
+  // phones don't say "back" or "rear" at all), so instead of ever guessing
+  // by list position — which risks landing on the selfie camera — we only
+  // pick a specific camera when we can positively rule out a front camera.
+  // Otherwise we let the browser's own facingMode logic handle it, which is
+  // far more reliable than string-matching a label.
+  chosenCameraId = null;
+  cameraRetried = false;
   try{
     availableCameras = await Html5Qrcode.getCameras();
-    const backCameras = availableCameras.filter(c => /back|rear|environment/i.test(c.label));
-    const mainBack = backCameras.find(c => !/wide|ultra|tele/i.test(c.label)) || backCameras[0];
-    activeCameraIndex = mainBack ? availableCameras.indexOf(mainBack) : 0;
-    if(activeCameraIndex < 0) activeCameraIndex = 0;
+    const frontPattern = /front|user|selfie|frontal|delantera/i;
+    const backPattern = /back|rear|environment|trasera|posterior/i;
+    const rearCandidates = availableCameras.filter(c => !frontPattern.test(c.label));
+    const mainBack = rearCandidates.find(c => backPattern.test(c.label) && !/wide|ultra|tele/i.test(c.label))
+                   || rearCandidates.find(c => backPattern.test(c.label));
+    if(mainBack) chosenCameraId = mainBack.id;
   }catch(e){
     availableCameras = [];
   }
@@ -1165,9 +1276,7 @@ async function openScanner(mode){
 }
 
 function startCameraStream(){
-  const cameraTarget = availableCameras[activeCameraIndex]
-    ? availableCameras[activeCameraIndex].id
-    : { facingMode: "environment" };
+  const cameraTarget = chosenCameraId || { facingMode: { ideal: "environment" } };
   html5QrCode.start(
     cameraTarget,
     {
@@ -1179,7 +1288,19 @@ function startCameraStream(){
     onScanSuccess,
     ()=>{}
   ).then(()=>{
-    // torch button stays visible regardless — capability detection is unreliable on many devices
+    // Safety net: if we somehow still ended up on the front (selfie) camera,
+    // switch to the rear one automatically — the person should never have to
+    // notice or fix this themselves.
+    try{
+      const settings = html5QrCode.getRunningTrackSettings();
+      if(settings && settings.facingMode === 'user' && !cameraRetried){
+        cameraRetried = true;
+        html5QrCode.stop().then(()=>{
+          chosenCameraId = null; // force facingMode-based request next time
+          startCameraStream();
+        });
+      }
+    }catch(e){ /* not all browsers expose this — safe to ignore */ }
   }).catch(err=>{
     document.getElementById('scannerStatus').textContent = 'No pudimos acceder a la cámara. Revisá los permisos del navegador.';
     console.error(err);
