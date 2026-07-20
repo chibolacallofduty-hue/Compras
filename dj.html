@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Calificaciones - 11° Año</title>
+  
+  <!-- Configuración PWA / Web App -->
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Notas 11°">
+  <link rel="manifest" href='data:application/manifest+json,{"name":"Control de Notas 11°","short_name":"Notas 11°","start_url":".","display":"standalone","background_color":"#ffffff","theme_color":"#4f46e5","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2991/2991106.png","sizes":"512x512","type":"image/png"}]}'>
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --danger: #ef4444;
+      --danger-bg: #fef2f2;
+      --danger-border: #fecaca;
+      --success: #10b981;
+      --success-bg: #ecfdf5;
+      --neutral: #64748b;
+      --neutral-bg: #f1f5f9;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); padding: 24px 16px; display: flex; justify-content: center; }
+    
+    .container { max-width: 850px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+    
+    /* Header & Action Buttons */
+    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .header h1 { font-size: 22px; font-weight: 700; color: var(--text); }
+    .header p { font-size: 14px; color: var(--text-muted); }
+
+    .header-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .stat-card { background: var(--card-bg); padding: 18px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .stat-title { font-size: 13px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 28px; font-weight: 800; margin-top: 6px; }
+    .stat-value.red { color: var(--danger); }
+    .stat-value.green { color: var(--success); }
+
+    /* Controls */
+    .card { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .controls-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+    
+    .min-grade-box { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+    .min-grade-box input { width: 65px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-weight: 700; text-align: center; font-size: 14px; }
+
+    .add-form { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .add-form input { padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; }
+    .add-form input:focus { border-color: var(--primary); }
+    .input-subject { flex: 3; min-width: 180px; }
+    .input-grade { flex: 1; min-width: 100px; }
+    
+    .btn { background: var(--primary); color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-install { background: #10b981; color: white; }
+    .btn-install:hover { background: #059669; }
+    .btn-secondary { background: #e2e8f0; color: #334155; }
+    .btn-secondary:hover { background: #cbd5e1; }
+
+    /* Table */
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { font-size: 12px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; padding: 12px 14px; border-bottom: 2px solid var(--border); }
+    td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 14px; }
+    
+    tr.quedado-row { background-color: var(--danger-bg); }
+    tr.quedado-row td { border-bottom-color: var(--danger-border); }
+
+    .grade-input-table { width: 70px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-weight: 700; text-align: center; }
+    
+    .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; }
+    .badge-quedado { background: #fef2f2; color: var(--danger); border: 1px solid var(--danger-border); }
+    .badge-pasado { background: var(--success-bg); color: var(--success); border: 1px solid #a7f3d0; }
+    .badge-pendiente { background: var(--neutral-bg); color: var(--neutral); border: 1px solid #cbd5e1; }
+
+    .btn-icon { background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; padding: 4px 8px; border-radius: 4px; }
+    .btn-icon:hover { color: var(--danger); background: #fee2e2; }
+
+    .empty-state { text-align: center; padding: 30px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <h1>Control Académico — Undécimo Año</h1>
+        <p>Monitoreo de rendimiento académico y materias reprobadas</p>
+      </div>
+      <div class="header-buttons">
+        <button class="btn btn-install" id="installBtn" onclick="installApp()">📱 Instalar App</button>
+        <button class="btn btn-secondary" onclick="resetToDefault()">Restablecer Materias</button>
+      </div>
+    </div>
+
+    <!-- Metric Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-title">Materias Quedadas</div>
+        <div class="stat-value red" id="statQuedadas">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Materias Aprobadas</div>
+        <div class="stat-value green" id="statAprobadas">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Promedio General</div>
+        <div class="stat-value" id="statPromedio">0.0</div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="card">
+      <div class="controls-row">
+        <div class="min-grade-box">
+          <label for="minGrade">Nota Mínima para Aprobar:</label>
+          <input type="number" id="minGrade" value="70" min="0" max="100" onchange="saveAndRender()">
+        </div>
+      </div>
+
+      <!-- Form -->
+      <form class="add-form" onsubmit="handleAdd(event)">
+        <input type="text" id="subjectInput" class="input-subject" placeholder="Agregar otra materia..." required>
+        <input type="number" id="gradeInput" class="input-grade" placeholder="Nota" min="0" max="100" value="0">
+        <button type="submit" class="btn">Agregar</button>
+      </form>
+
+      <!-- Tabla -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Materia</th>
+              <th>Nota</th>
+              <th>Estado</th>
+              <th style="text-align: right;">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="gradeTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Registro de Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
+        self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+        self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));
+      `;
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+    }
+
+    // Lógica para capturar el evento de instalación
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('installBtn');
+      if (installBtn) installBtn.style.display = 'inline-flex';
+    });
+
+    function installApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('El usuario instaló la App');
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        alert("Para instalar en tu teléfono:\n\n• En Android (Chrome): Toca los 3 puntos arriba a la derecha y selecciona 'Agregar a la pantalla principal' o 'Instalar aplicación'.\n\n• En iPhone (Safari): Toca el botón Compartir (el ícono con un cuadrado y una flecha) y selecciona 'Agregar a inicio'.");
+      }
+    }
+
+    // Datos por defecto
+    const defaultSubjects = [
+      { id: 1, subject: "Matemáticas", grade: 0 },
+      { id: 2, subject: "Español", grade: 0 },
+      { id: 3, subject: "Estudios Sociales", grade: 0 },
+      { id: 4, subject: "Educación Cívica", grade: 0 },
+      { id: 5, subject: "Biología", grade: 0 },
+      { id: 6, subject: "Química", grade: 0 },
+      { id: 7, subject: "Física", grade: 0 },
+      { id: 8, subject: "Inglés", grade: 0 },
+      { id: 9, subject: "Filosofía", grade: 0 },
+      { id: 10, subject: "Educación Física", grade: 0 }
+    ];
+
+    let grades = [];
+
+    function init() {
+      const savedGrades = localStorage.getItem('grades_11');
+      const savedMin = localStorage.getItem('min_grade_11');
+      
+      if (savedMin) document.getElementById('minGrade').value = savedMin;
+      
+      if (savedGrades) {
+        grades = JSON.parse(savedGrades);
+      } else {
+        grades = JSON.parse(JSON.stringify(defaultSubjects));
+      }
+      render();
+    }
+
+    function saveAndRender() {
+      const minGrade = parseFloat(document.getElementById('minGrade').value) || 70;
+      localStorage.setItem('grades_11', JSON.stringify(grades));
+      localStorage.setItem('min_grade_11', minGrade);
+      render();
+    }
+
+    function updateGrade(id, newGrade) {
+      const numGrade = parseFloat(newGrade);
+      const index = grades.findIndex(item => item.id === id);
+      if (index !== -1) {
+        grades[index].grade = isNaN(numGrade) || numGrade < 0 ? 0 : numGrade;
+        saveAndRender();
+      }
+    }
+
+    function handleAdd(e) {
+      e.preventDefault();
+      const subInput = document.getElementById('subjectInput');
+      const gradeInput = document.getElementById('gradeInput');
+      
+      grades.push({
+        id: Date.now(),
+        subject: subInput.value.trim(),
+        grade: parseFloat(gradeInput.value) || 0
+      });
+
+      subInput.value = '';
+      gradeInput.value = '0';
+      saveAndRender();
+    }
+
+    function deleteSubject(id) {
+      grades = grades.filter(item => item.id !== id);
+      saveAndRender();
+    }
+
+    function resetToDefault() {
+      if (confirm("¿Deseas restablecer la lista predeterminada de 11° año?")) {
+        grades = JSON.parse(JSON.stringify(defaultSubjects));
+        saveAndRender();
+      }
+    }
+
+    function render() {
+      const minGrade = parseFloat(document.getElementById('minGrade').value) || 70;
+      const tbody = document.getElementById('gradeTableBody');
+      tbody.innerHTML = '';
+
+      let quedadas = 0;
+      let aprobadas = 0;
+      let sumaNotas = 0;
+      let materiasConNota = 0;
+
+      if (grades.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No hay materias registradas.</td></tr>`;
+      }
+
+      grades.forEach(item => {
+        const isPending = item.grade === 0;
+        const isFailed = !isPending && item.grade < minGrade;
+        const isPassed = !isPending && item.grade >= minGrade;
+
+        if (isFailed) quedadas++;
+        if (isPassed) aprobadas++;
+
+        if (!isPending) {
+          sumaNotas += item.grade;
+          materiasConNota++;
+        }
+
+        const tr = document.createElement('tr');
+        if (isFailed) tr.classList.add('quedado-row');
+
+        let badgeHtml = '';
+        if (isPending) {
+          badgeHtml = `<span class="badge badge-pendiente">⏳ Pendiente</span>`;
+        } else if (isFailed) {
+          badgeHtml = `<span class="badge badge-quedado">⚠️ Quedado</span>`;
+        } else {
+          badgeHtml = `<span class="badge badge-pasado">✓ Aprobado</span>`;
+        }
+
+        tr.innerHTML = `
+          <td><strong>${item.subject}</strong></td>
+          <td>
+            <input 
+              type="number" 
+              class="grade-input-table" 
+              value="${item.grade}" 
+              min="0" 
+              max="100" 
+              onchange="updateGrade(${item.id}, this.value)"
+            >
+          </td>
+          <td>${badgeHtml}</td>
+          <td style="text-align: right;">
+            <button class="btn-icon" onclick="deleteSubject(${item.id})" title="Eliminar materia">✕</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('statQuedadas').textContent = quedadas;
+      document.getElementById('statAprobadas').textContent = aprobadas;
+      
+      const promedio = materiasConNota > 0 ? (sumaNotas / materiasConNota).toFixed(1) : "0.0";
+      const elPromedio = document.getElementById('statPromedio');
+      elPromedio.textContent = promedio;
+      elPromedio.className = `stat-value ${parseFloat(promedio) < minGrade && materiasConNota > 0 ? 'red' : 'green'}`;
+    }
+
+    init();
+  </script>
+</body>
+</html>
