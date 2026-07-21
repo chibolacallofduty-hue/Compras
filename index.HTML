@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Calificaciones - 11° Año</title>
+  
+  <!-- Configuración PWA / Web App -->
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Notas 11°">
+  <link rel="manifest" href='data:application/manifest+json,{"name":"Control de Notas 11°","short_name":"Notas 11°","start_url":".","display":"standalone","background_color":"#ffffff","theme_color":"#4f46e5","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2991/2991106.png","sizes":"512x512","type":"image/png"}]}'>
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --danger: #ef4444;
+      --danger-bg: #fef2f2;
+      --danger-border: #fecaca;
+      --success: #10b981;
+      --success-bg: #ecfdf5;
+      --neutral: #64748b;
+      --neutral-bg: #f1f5f9;
+      --info-bg: #eff6ff;
+      --info-text: #1d4ed8;
+      --info-border: #bfdbfe;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); padding: 24px 16px; display: flex; justify-content: center; }
+    
+    .container { max-width: 900px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+    
+    /* Header & Action Buttons */
+    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .header h1 { font-size: 22px; font-weight: 700; color: var(--text); }
+    .header p { font-size: 14px; color: var(--text-muted); }
+
+    .header-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .stat-card { background: var(--card-bg); padding: 18px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .stat-title { font-size: 13px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 28px; font-weight: 800; margin-top: 6px; }
+    .stat-value.red { color: var(--danger); }
+    .stat-value.green { color: var(--success); }
+
+    /* Controls */
+    .card { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .controls-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+    
+    .min-grade-box { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+    .min-grade-box input { width: 65px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-weight: 700; text-align: center; font-size: 14px; }
+
+    .add-form { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .add-form input { padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; }
+    .add-form input:focus { border-color: var(--primary); }
+    .input-subject { flex: 3; min-width: 180px; }
+    
+    .btn { background: var(--primary); color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-install { background: #10b981; color: white; }
+    .btn-install:hover { background: #059669; }
+    .btn-secondary { background: #e2e8f0; color: #334155; }
+    .btn-secondary:hover { background: #cbd5e1; }
+
+    /* Table */
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { font-size: 12px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; padding: 12px 10px; border-bottom: 2px solid var(--border); white-space: nowrap; }
+    td { padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 14px; white-space: nowrap; }
+    
+    tr.quedado-row { background-color: var(--danger-bg); }
+    tr.quedado-row td { border-bottom-color: var(--danger-border); }
+
+    /* Estilos dinámicos para las celdas de nota */
+    .grade-input-table { 
+      width: 70px; 
+      padding: 8px 6px; 
+      border: 2px solid var(--border); 
+      border-radius: 8px; 
+      font-weight: 800; 
+      text-align: center; 
+      font-size: 15px;
+      transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+      outline: none;
+    }
+
+    /* Celda Verde (Nota Aprobada) */
+    .grade-input-table.grade-pass {
+      background-color: #d1fae5;
+      color: #065f46;
+      border-color: #10b981;
+    }
+
+    /* Celda Roja (Nota Quedada) */
+    .grade-input-table.grade-fail {
+      background-color: #fee2e2;
+      color: #991b1b;
+      border-color: #ef4444;
+    }
+    
+    .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; }
+    .badge-quedado { background: #fef2f2; color: var(--danger); border: 1px solid var(--danger-border); }
+    .badge-pasado { background: var(--success-bg); color: var(--success); border: 1px solid #a7f3d0; }
+    .badge-pendiente { background: var(--neutral-bg); color: var(--neutral); border: 1px solid #cbd5e1; }
+    .badge-info { background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); }
+
+    .btn-icon { background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; padding: 4px 8px; border-radius: 4px; }
+    .btn-icon:hover { color: var(--danger); background: #fee2e2; }
+
+    .empty-state { text-align: center; padding: 30px; color: var(--text-muted); }
+    .annual-tag { font-weight: 800; font-size: 16px; }
+    .annual-tag.red { color: var(--danger); }
+    .annual-tag.green { color: var(--success); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <h1>Control Académico — 11° Año</h1>
+        <p>I Semestre (50%) | II Semestre (50%)</p>
+      </div>
+      <div class="header-buttons">
+        <button class="btn btn-install" id="installBtn" onclick="installApp()">📱 Instalar App</button>
+        <button class="btn btn-secondary" onclick="resetToDefault()">Restablecer Materias</button>
+      </div>
+    </div>
+
+    <!-- Metric Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-title">Materias Quedadas (Anual)</div>
+        <div class="stat-value red" id="statQuedadas">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Materias Aprobadas</div>
+        <div class="stat-value green" id="statAprobadas">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Promedio Anual General</div>
+        <div class="stat-value" id="statPromedio">0.0</div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="card">
+      <div class="controls-row">
+        <div class="min-grade-box">
+          <label for="minGrade">Nota Mínima para Aprobar:</label>
+          <input type="number" id="minGrade" value="70" min="0" max="100" onchange="saveAndRenderAll()">
+        </div>
+      </div>
+
+      <!-- Form -->
+      <form class="add-form" onsubmit="handleAdd(event)">
+        <input type="text" id="subjectInput" class="input-subject" placeholder="Agregar nueva materia..." required>
+        <button type="submit" class="btn">Agregar Materia</button>
+      </form>
+
+      <!-- Tabla -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Materia</th>
+              <th>I Semestre</th>
+              <th>II Semestre</th>
+              <th>Nota Anual</th>
+              <th>Estado</th>
+              <th style="text-align: right;">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="gradeTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Registro PWA
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
+        self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+        self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));
+      `;
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+    }
+
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('installBtn');
+      if (installBtn) installBtn.style.display = 'inline-flex';
+    });
+
+    function installApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+      } else {
+        alert("Para instalar en tu teléfono:\n\n• Android (Chrome): Opción 'Agregar a la pantalla principal'.\n\n• iPhone (Safari): Botón Compartir -> 'Agregar a inicio'.");
+      }
+    }
+
+    // Materias por defecto
+    const defaultSubjects = [
+      { id: 1, subject: "Matemáticas", sem1: null, sem2: null },
+      { id: 2, subject: "Español", sem1: null, sem2: null },
+      { id: 3, subject: "Estudios Sociales", sem1: null, sem2: null },
+      { id: 4, subject: "Educación Cívica", sem1: null, sem2: null },
+      { id: 5, subject: "Biología", sem1: null, sem2: null },
+      { id: 6, subject: "Química", sem1: null, sem2: null },
+      { id: 7, subject: "Física", sem1: null, sem2: null },
+      { id: 8, subject: "Inglés", sem1: null, sem2: null },
+      { id: 9, subject: "Filosofía", sem1: null, sem2: null },
+      { id: 10, subject: "Educación Física", sem1: null, sem2: null }
+    ];
+
+    let grades = [];
+
+    function init() {
+      const savedGrades = localStorage.getItem('grades_11_v6');
+      const savedMin = localStorage.getItem('min_grade_11');
+      
+      if (savedMin) document.getElementById('minGrade').value = savedMin;
+      
+      if (savedGrades) {
+        grades = JSON.parse(savedGrades);
+      } else {
+        grades = JSON.parse(JSON.stringify(defaultSubjects));
+      }
+      renderTable();
+      updateStats();
+    }
+
+    function saveAndRenderAll() {
+      const minGrade = parseFloat(document.getElementById('minGrade').value) || 70;
+      localStorage.setItem('grades_11_v6', JSON.stringify(grades));
+      localStorage.setItem('min_grade_11', minGrade);
+      renderTable();
+      updateStats();
+    }
+
+    function updateField(id, field, inputEl) {
+      const index = grades.findIndex(item => item.id === id);
+      if (index === -1) return;
+
+      const valStr = inputEl.value;
+      if (valStr === '' || valStr === null) {
+        grades[index][field] = null;
+      } else {
+        const numVal = parseFloat(valStr);
+        grades[index][field] = isNaN(numVal) ? null : numVal;
+      }
+
+      localStorage.setItem('grades_11_v6', JSON.stringify(grades));
+
+      const tr = inputEl.closest('tr');
+      updateRowUI(tr, grades[index]);
+      updateStats();
+    }
+
+    function updateRowUI(tr, item) {
+      const minGrade = parseFloat(document.getElementById('minGrade').value) || 70;
+      const inputs = tr.querySelectorAll('.grade-input-table');
+      const sem1Input = inputs[0];
+      const sem2Input = inputs[1];
+
+      const hasSem1 = item.sem1 !== null && !isNaN(item.sem1);
+      const hasSem2 = item.sem2 !== null && !isNaN(item.sem2);
+
+      // Coloreado individual de casillas
+      sem1Input.className = 'grade-input-table ' + (hasSem1 ? (item.sem1 >= minGrade ? 'grade-pass' : 'grade-fail') : '');
+      sem2Input.className = 'grade-input-table ' + (hasSem2 ? (item.sem2 >= minGrade ? 'grade-pass' : 'grade-fail') : '');
+
+      let anualText = '-';
+      let badgeHtml = '<span class="badge badge-pendiente">⏳ Pendiente</span>';
+      let isFailed = false;
+
+      // Promedio 50% / 50%
+      if (hasSem1 && hasSem2) {
+        const anual = (item.sem1 + item.sem2) / 2;
+        anualText = anual.toFixed(1);
+        if (anual < minGrade) {
+          isFailed = true;
+          badgeHtml = `<span class="badge badge-quedado">⚠️ Quedado</span>`;
+        } else {
+          badgeHtml = `<span class="badge badge-pasado">✓ Aprobado</span>`;
+        }
+      } else if (hasSem1 || hasSem2) {
+        badgeHtml = `<span class="badge badge-info">En curso</span>`;
+      }
+
+      if (isFailed) {
+        tr.classList.add('quedado-row');
+      } else {
+        tr.classList.remove('quedado-row');
+      }
+
+      const annualTag = tr.querySelector('.annual-tag');
+      if (annualTag) {
+        annualTag.textContent = anualText;
+        annualTag.className = 'annual-tag ' + (hasSem1 && hasSem2 ? (isFailed ? 'red' : 'green') : '');
+      }
+
+      const badgeCell = tr.children[4];
+      if (badgeCell) badgeCell.innerHTML = badgeHtml;
+    }
+
+    function updateStats() {
+      const minGrade = parseFloat(document.getElementById('minGrade').value) || 70;
+      let quedadas = 0;
+      let aprobadas = 0;
+      let sumaAnuales = 0;
+      let materiasEvaluadas = 0;
+
+      grades.forEach(item => {
+        const hasSem1 = item.sem1 !== null && !isNaN(item.sem1);
+        const hasSem2 = item.sem2 !== null && !isNaN(item.sem2);
+
+        if (hasSem1 && hasSem2) {
+          const anual = (item.sem1 + item.sem2) / 2;
+          if (anual < minGrade) {
+            quedadas++;
+          } else {
+            aprobadas++;
+          }
+          sumaAnuales += anual;
+          materiasEvaluadas++;
+        }
+      });
+
+      document.getElementById('statQuedadas').textContent = quedadas;
+      document.getElementById('statAprobadas').textContent = aprobadas;
+      
+      const promedioGen = materiasEvaluadas > 0 ? (sumaAnuales / materiasEvaluadas).toFixed(1) : "0.0";
+      const elPromedio = document.getElementById('statPromedio');
+      elPromedio.textContent = promedioGen;
+      elPromedio.className = `stat-value ${parseFloat(promedioGen) < minGrade && materiasEvaluadas > 0 ? 'red' : 'green'}`;
+    }
+
+    function handleAdd(e) {
+      e.preventDefault();
+      const subInput = document.getElementById('subjectInput');
+      
+      grades.push({
+        id: Date.now(),
+        subject: subInput.value.trim(),
+        sem1: null,
+        sem2: null
+      });
+
+      subInput.value = '';
+      saveAndRenderAll();
+    }
+
+    function deleteSubject(id) {
+      grades = grades.filter(item => item.id !== id);
+      saveAndRenderAll();
+    }
+
+    function resetToDefault() {
+      if (confirm("¿Deseas restablecer la lista predeterminada de materias?")) {
+        grades = JSON.parse(JSON.stringify(defaultSubjects));
+        saveAndRenderAll();
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('gradeTableBody');
+      tbody.innerHTML = '';
+
+      if (grades.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No hay materias registradas.</td></tr>`;
+        return;
+      }
+
+      grades.forEach(item => {
+        const hasSem1 = item.sem1 !== null && !isNaN(item.sem1);
+        const hasSem2 = item.sem2 !== null && !isNaN(item.sem2);
+
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td><strong>${item.subject}</strong></td>
+          <td>
+            <input 
+              type="number" 
+              class="grade-input-table" 
+              value="${hasSem1 ? item.sem1 : ''}" 
+              placeholder="-"
+              min="0" 
+              max="100" 
+              oninput="updateField(${item.id}, 'sem1', this)"
+            >
+          </td>
+          <td>
+            <input 
+              type="number" 
+              class="grade-input-table" 
+              value="${hasSem2 ? item.sem2 : ''}" 
+              placeholder="-"
+              min="0" 
+              max="100" 
+              oninput="updateField(${item.id}, 'sem2', this)"
+            >
+          </td>
+          <td>
+            <span class="annual-tag">-</span>
+          </td>
+          <td>
+            <span class="badge badge-pendiente">⏳ Pendiente</span>
+          </td>
+          <td style="text-align: right;">
+            <button class="btn-icon" onclick="deleteSubject(${item.id})" title="Eliminar materia">✕</button>
+          </td>
+        `;
+        
+        tbody.appendChild(tr);
+        updateRowUI(tr, item);
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>
