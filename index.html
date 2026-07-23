@@ -5,14 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Control de Calificaciones - 11° Año</title>
   
-  <!-- Configuración PWA / Web App -->
-  <meta name="theme-color" content="#4f46e5">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Notas 11°">
-  <link rel="manifest" href='data:application/manifest+json,{"name":"Control de Notas 11°","short_name":"Notas 11°","start_url":".","display":"standalone","background_color":"#ffffff","theme_color":"#4f46e5","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2991/2991106.png","sizes":"512x512","type":"image/png"}]}'>
-
   <style>
     :root {
       --bg: #f8fafc;
@@ -67,8 +59,6 @@
     
     .btn { background: var(--primary); color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
     .btn:hover { background: var(--primary-hover); }
-    .btn-install { background: #10b981; color: white; }
-    .btn-install:hover { background: #059669; }
     .btn-secondary { background: #e2e8f0; color: #334155; }
     .btn-secondary:hover { background: #cbd5e1; }
 
@@ -133,7 +123,6 @@
         <p>Ingresa tus notas por semestre. Las celdas cambiarán de color según la nota.</p>
       </div>
       <div class="header-buttons">
-        <button class="btn btn-install" id="installBtn" onclick="installApp()">📱 Instalar App</button>
         <button class="btn btn-secondary" onclick="resetToDefault()">Restablecer Materias</button>
       </div>
     </div>
@@ -189,34 +178,6 @@
   </div>
 
   <script>
-    // Registro PWA
-    if ('serviceWorker' in navigator) {
-      const swCode = `
-        self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
-        self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
-        self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));
-      `;
-      const blob = new Blob([swCode], { type: 'application/javascript' });
-      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
-    }
-
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      const installBtn = document.getElementById('installBtn');
-      if (installBtn) installBtn.style.display = 'inline-flex';
-    });
-
-    function installApp() {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
-      } else {
-        alert("Para instalar en tu teléfono:\n\n• Android (Chrome): Opción 'Agregar a la pantalla principal'.\n\n• iPhone (Safari): Botón Compartir -> 'Agregar a inicio'.");
-      }
-    }
-
     // Materias por defecto
     const defaultSubjects = [
       { id: 1, subject: "Matemáticas", sem1: null, sem2: null },
