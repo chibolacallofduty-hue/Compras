@@ -12,7 +12,7 @@
       --text: #0f172a;
       --text-muted: #64748b;
       --border: #e2e8f0;
-      --primary: #4f46e5; /* Morado / Índigo */
+      --primary: #4f46e5;
       --primary-hover: #4338ca;
       --danger: #ef4444;
       --danger-bg: #fef2f2;
@@ -34,7 +34,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
       background-color: var(--bg); 
       color: var(--text); 
-      padding: 24px 16px; 
+      padding: 20px 16px; 
       margin: 0;
       display: flex; 
       justify-content: center; 
@@ -45,36 +45,36 @@
       width: 100%; 
       display: flex; 
       flex-direction: column; 
-      gap: 20px; 
+      gap: 18px; 
     }
 
     /* Header & Action Buttons */
-    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-    .header h1 { font-size: 22px; font-weight: 700; color: var(--text); margin: 0; }
-    .header p { font-size: 14px; color: var(--text-muted); margin: 4px 0 0 0; }
+    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-right: 110px; }
+    .header h1 { font-size: 20px; font-weight: 700; color: var(--text); margin: 0; }
+    .header p { font-size: 13px; color: var(--text-muted); margin: 3px 0 0 0; }
     .header-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 
     /* Metric Cards */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-    .stat-card { background: var(--card-bg); padding: 18px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .stat-title { font-size: 13px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-value { font-size: 28px; font-weight: 800; margin-top: 6px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+    .stat-card { background: var(--card-bg); padding: 16px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .stat-title { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 26px; font-weight: 800; margin-top: 4px; }
     .stat-value.red { color: var(--danger); }
     .stat-value.green { color: var(--success); }
 
     /* Controls & Card */
-    .card { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .controls-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+    .card { background: var(--card-bg); padding: 18px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .controls-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
     
-    .min-grade-box { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
-    .min-grade-box input { width: 65px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-weight: 700; text-align: center; font-size: 14px; }
+    .min-grade-box { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+    .min-grade-box input { width: 60px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px; font-weight: 700; text-align: center; font-size: 13px; }
 
-    .add-form { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-    .add-form input { padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; }
+    .add-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .add-form input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; }
     .add-form input:focus { border-color: var(--primary); }
-    .input-subject { flex: 3; min-width: 180px; }
+    .input-subject { flex: 3; min-width: 160px; }
     
-    .btn { background: var(--primary); color: white; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn { background: var(--primary); color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
     .btn:hover { background: var(--primary-hover); }
     .btn-secondary { background: #e2e8f0; color: #334155; }
     .btn-secondary:hover { background: #cbd5e1; }
@@ -82,31 +82,30 @@
     /* Table */
     .table-container { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; text-align: left; }
-    th { font-size: 12px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; padding: 12px 10px; border-bottom: 2px solid var(--border); white-space: nowrap; }
-    td { padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 14px; white-space: nowrap; }
+    th { font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; padding: 10px 8px; border-bottom: 2px solid var(--border); white-space: nowrap; }
+    td { padding: 10px 8px; border-bottom: 1px solid var(--border); font-size: 13px; white-space: nowrap; }
     
     tr.quedado-row { background-color: var(--danger-bg); }
     tr.quedado-row td { border-bottom-color: var(--danger-border); }
 
-    /* CASILLA DE ENTRADA CON EFECTO DE ALUMBRADO MORADO EN SELECCIÓN */
+    /* CASILLA CON EFECTO MORADO EN SELECCIÓN */
     .grade-input-table { 
-      width: 70px; 
-      padding: 8px 6px; 
+      width: 65px; 
+      padding: 6px 4px; 
       border: 2px solid var(--border); 
       border-radius: 8px; 
       font-weight: 800; 
       text-align: center; 
-      font-size: 15px;
+      font-size: 14px;
       transition: all 0.2s ease-in-out;
       outline: none;
       background-color: #fff;
     }
 
-    /* EFECTO MORADO AL MARCAR/TOCAR LA CASILLA */
     .grade-input-table:focus {
       border-color: #6366f1;
-      box-shadow: 0 0 12px rgba(99, 102, 241, 0.5), 0 0 0 3px rgba(99, 102, 241, 0.25);
-      transform: scale(1.06);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.45), 0 0 0 3px rgba(99, 102, 241, 0.2);
+      transform: scale(1.05);
       z-index: 5;
       position: relative;
     }
@@ -123,22 +122,165 @@
       border-color: #ef4444;
     }
     
-    .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; }
+    .badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700; }
     .badge-quedado { background: #fef2f2; color: var(--danger); border: 1px solid var(--danger-border); }
     .badge-pasado { background: var(--success-bg); color: var(--success); border: 1px solid #a7f3d0; }
     .badge-pendiente { background: var(--neutral-bg); color: var(--neutral); border: 1px solid #cbd5e1; }
     .badge-info { background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); }
 
-    .btn-icon { background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; padding: 4px 8px; border-radius: 4px; }
+    .btn-icon { background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 15px; padding: 3px 6px; border-radius: 4px; }
     .btn-icon:hover { color: var(--danger); background: #fee2e2; }
 
-    .empty-state { text-align: center; padding: 30px; color: var(--text-muted); }
-    .annual-tag { font-weight: 800; font-size: 16px; }
+    .empty-state { text-align: center; padding: 24px; color: var(--text-muted); }
+    .annual-tag { font-weight: 800; font-size: 15px; }
     .annual-tag.red { color: var(--danger); }
     .annual-tag.green { color: var(--success); }
+
+    /* WIDGET ROBÓTICO FLOTANTE CON EFECTO DE ESCALA AL HACER SCROLL */
+    .mascot-widget {
+      position: fixed;
+      top: 12px;
+      right: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      z-index: 999;
+      pointer-events: none;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-origin: top right;
+    }
+
+    .mascot-widget.scrolled {
+      transform: scale(0.70);
+    }
+
+    /* GLOBO DE MENSAJE ROBÓTICO */
+    .mascot-bubble {
+      background: #ffffff;
+      color: #0f172a;
+      border: 2px solid #4f46e5;
+      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.25);
+      padding: 5px 10px;
+      border-radius: 10px;
+      border-top-right-radius: 2px;
+      font-size: 11px;
+      line-height: 1.25;
+      font-weight: 800;
+      margin-top: 2px;
+      max-width: 140px;
+      text-align: center;
+      transition: all 0.3s ease;
+      font-family: monospace, sans-serif;
+      letter-spacing: -0.2px;
+    }
+
+    .mascot-body {
+      animation: robotFloat 3s ease-in-out infinite;
+    }
+
+    .mascot-shadow {
+      animation: shadowScale 3s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    .antenna-pulse {
+      animation: antennaGlow 1.2s infinite alternate;
+    }
+
+    .chest-light {
+      animation: chestPulse 2s infinite alternate;
+    }
+
+    @keyframes robotFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    @keyframes shadowScale {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(0.65); opacity: 0.35; }
+    }
+
+    @keyframes antennaGlow {
+      0% { fill: #38bdf8; filter: drop-shadow(0 0 2px #38bdf8); }
+      100% { fill: #818cf8; filter: drop-shadow(0 0 8px #818cf8); }
+    }
+
+    @keyframes chestPulse {
+      0% { opacity: 0.6; }
+      100% { opacity: 1; filter: drop-shadow(0 0 4px currentColor); }
+    }
   </style>
 </head>
 <body>
+
+  <!-- PERSONAJE ROBÓTICO AVANZADO EN LA ESQUINA -->
+  <div class="mascot-widget" id="mascotWidget">
+    <div class="mascot-svg-wrapper">
+      <svg width="70" height="78" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="botBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#6366f1" />
+            <stop offset="100%" stop-color="#3730a3" />
+          </linearGradient>
+          <linearGradient id="botHeadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#818cf8" />
+            <stop offset="100%" stop-color="#4338ca" />
+          </linearGradient>
+          <linearGradient id="visorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#020617" />
+            <stop offset="100%" stop-color="#0f172a" />
+          </linearGradient>
+        </defs>
+
+        <!-- Sombra -->
+        <ellipse cx="50" cy="104" rx="22" ry="4" fill="rgba(0,0,0,0.18)" class="mascot-shadow" />
+
+        <g class="mascot-body">
+          <!-- Antena -->
+          <line x1="50" y1="28" x2="50" y2="10" stroke="#4338ca" stroke-width="4" stroke-linecap="round" />
+          <circle cx="50" cy="8" r="5" fill="#38bdf8" class="antenna-pulse" />
+
+          <!-- Orejas / Conectores -->
+          <rect x="14" y="38" width="8" height="14" rx="3" fill="#312e81" />
+          <rect x="78" y="38" width="8" height="14" rx="3" fill="#312e81" />
+          <circle cx="18" cy="45" r="2" fill="#38bdf8" />
+          <circle cx="82" cy="45" r="2" fill="#38bdf8" />
+
+          <!-- Cabeza -->
+          <rect x="20" y="24" width="60" height="46" rx="14" fill="url(#botHeadGrad)" stroke="#312e81" stroke-width="2" />
+
+          <!-- Visor / Pantalla Digital -->
+          <rect x="26" y="30" width="48" height="34" rx="9" fill="url(#visorGrad)" stroke="#1e1b4b" stroke-width="1.5" />
+
+          <!-- EXPRESIONES FACIALES LED -->
+          <g id="mascotFace">
+            <!-- Rostro por defecto (Neutral LED) -->
+            <circle cx="40" cy="45" r="4.5" fill="#38bdf8" />
+            <circle cx="60" cy="45" r="4.5" fill="#38bdf8" />
+            <rect x="42" y="54" width="16" height="3" rx="1.5" fill="#38bdf8" />
+          </g>
+
+          <!-- Cuerpo -->
+          <path d="M 28 72 L 72 72 L 68 96 L 32 96 Z" fill="url(#botBodyGrad)" stroke="#312e81" stroke-width="2" />
+
+          <!-- Panel de Pecho / Batería de Energía -->
+          <rect x="38" y="77" width="24" height="12" rx="3" fill="#020617" />
+          <rect id="mascotEnergyBar" x="40" y="79" width="20" height="8" rx="2" fill="#38bdf8" class="chest-light" />
+
+          <!-- Brazos Robóticos -->
+          <path d="M 18 76 Q 10 82 14 90" stroke="#4338ca" stroke-width="4" fill="none" stroke-linecap="round" />
+          <path d="M 82 76 Q 90 82 86 90" stroke="#4338ca" stroke-width="4" fill="none" stroke-linecap="round" />
+          <circle cx="14" cy="90" r="3" fill="#312e81" />
+          <circle cx="86" cy="90" r="3" fill="#312e81" />
+        </g>
+      </svg>
+    </div>
+
+    <div class="mascot-bubble" id="mascotBubble">
+      [BOT: ONLINE] Ingresa notas.
+    </div>
+  </div>
 
   <div class="container">
     <!-- Header -->
@@ -217,6 +359,17 @@
     ];
 
     let grades = [];
+
+    // Reducir tamaño del robot al bajar en la página
+    window.addEventListener('scroll', () => {
+      const widget = document.getElementById('mascotWidget');
+      if (!widget) return;
+      if (window.scrollY > 30) {
+        widget.classList.add('scrolled');
+      } else {
+        widget.classList.remove('scrolled');
+      }
+    });
 
     function init() {
       const savedGrades = localStorage.getItem('grades_11_v5');
@@ -310,7 +463,10 @@
       let quedadas = 0;
       let aprobadas = 0;
       let sumaAnuales = 0;
-      let materiasEvaluadas = 0;
+      let materiasEvaluadasAnual = 0;
+
+      let sumaNotasMascota = 0;
+      let totalNotasMascota = 0;
 
       grades.forEach(item => {
         const hasSem1 = item.sem1 !== null && !isNaN(item.sem1);
@@ -324,17 +480,76 @@
             aprobadas++;
           }
           sumaAnuales += anual;
-          materiasEvaluadas++;
+          materiasEvaluadasAnual++;
+        }
+
+        if (hasSem1 && hasSem2) {
+          sumaNotasMascota += (item.sem1 + item.sem2) / 2;
+          totalNotasMascota++;
+        } else if (hasSem1) {
+          sumaNotasMascota += item.sem1;
+          totalNotasMascota++;
+        } else if (hasSem2) {
+          sumaNotasMascota += item.sem2;
+          totalNotasMascota++;
         }
       });
 
       document.getElementById('statQuedadas').textContent = quedadas;
       document.getElementById('statAprobadas').textContent = aprobadas;
       
-      const promedioGen = materiasEvaluadas > 0 ? (sumaAnuales / materiasEvaluadas).toFixed(1) : "0.0";
+      const promedioGen = materiasEvaluadasAnual > 0 ? (sumaAnuales / materiasEvaluadasAnual).toFixed(1) : "0.0";
       const elPromedio = document.getElementById('statPromedio');
       elPromedio.textContent = promedioGen;
-      elPromedio.className = `stat-value ${parseFloat(promedioGen) < minGrade && materiasEvaluadas > 0 ? 'red' : 'green'}`;
+      elPromedio.className = `stat-value ${parseFloat(promedioGen) < minGrade && materiasEvaluadasAnual > 0 ? 'red' : 'green'}`;
+
+      const promedioActualMascota = totalNotasMascota > 0 ? (sumaNotasMascota / totalNotasMascota) : null;
+      updateMascot(promedioActualMascota, minGrade, totalNotasMascota);
+    }
+
+    // Actualiza la interfaz digital del ROBOT (Rostro LED, Barra de energía y diálogo)
+    function updateMascot(promedio, minGrade, totalNotas) {
+      const bubble = document.getElementById('mascotBubble');
+      const face = document.getElementById('mascotFace');
+      const energyBar = document.getElementById('mascotEnergyBar');
+      if (!bubble || !face || !energyBar) return;
+
+      if (totalNotas === 0 || promedio === null) {
+        bubble.textContent = "[BOT: ONLINE] Listo para datos.";
+        energyBar.setAttribute("fill", "#38bdf8");
+        // Rostro Neutral LED
+        face.innerHTML = `
+          <circle cx="40" cy="45" r="4.5" fill="#38bdf8"/>
+          <circle cx="60" cy="45" r="4.5" fill="#38bdf8"/>
+          <rect x="42" y="54" width="16" height="3" rx="1.5" fill="#38bdf8"/>
+        `;
+      } else if (promedio < minGrade) {
+        bubble.textContent = `⚠️ ALERTA: ${promedio.toFixed(1)}. Requieres subida.`;
+        energyBar.setAttribute("fill", "#ef4444");
+        // Rostro Triste / Error LED (Rojo)
+        face.innerHTML = `
+          <path d="M 35 42 L 45 47 M 65 42 L 55 47" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="40" cy="47" r="3" fill="#ef4444"/>
+          <circle cx="60" cy="47" r="3" fill="#ef4444"/>
+          <path d="M 42 58 Q 50 52 58 58" stroke="#ef4444" stroke-width="3" fill="none" stroke-linecap="round"/>
+        `;
+      } else if (promedio >= minGrade + 15 || promedio >= 85) {
+        bubble.textContent = `🔥 NIVEL MÁXIMO: ${promedio.toFixed(1)} promed.`;
+        energyBar.setAttribute("fill", "#a855f7");
+        // Rostro Superexitado / Cyan-Morado LED
+        face.innerHTML = `
+          <path d="M 34 46 Q 40 38 46 46 M 54 46 Q 60 38 66 46" stroke="#c084fc" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M 40 54 Q 50 64 60 54 Z" fill="#38bdf8"/>
+        `;
+      } else {
+        bubble.textContent = `⚡ ESTADO OK: ${promedio.toFixed(1)} en curso.`;
+        energyBar.setAttribute("fill", "#10b981");
+        // Rostro Feliz LED (Verde / Azul)
+        face.innerHTML = `
+          <path d="M 35 46 Q 40 40 45 46 M 55 46 Q 60 40 65 46" stroke="#34d399" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M 41 53 Q 50 61 59 53" stroke="#34d399" stroke-width="3" fill="none" stroke-linecap="round"/>
+        `;
+      }
     }
 
     function handleAdd(e) {
